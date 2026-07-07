@@ -44,7 +44,7 @@ jobs:
         run: curl -f http://localhost:8080/metrics
 
       - name: Build dashboard
+        working-directory: dashboard
         run: |
-          cd dashboard
           npm install --legacy-peer-deps
           CI=false npm run build
