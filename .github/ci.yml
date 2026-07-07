@@ -1,0 +1,48 @@
+name: CI — Distributed Job Scheduler
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check server starts
+        run: |
+          timeout 10 node src/server.js &
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+        env:
+          PORT: 8080
+          REDIS_HOST: localhost
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      - name: Check metrics endpoint
+        run: curl -f http://localhost:8080/metrics
+
+      - name: Build dashboard
+        run: |
+          cd dashboard
+          npm install
+          npm run build
